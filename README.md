@@ -23,7 +23,7 @@ Techniques in back-end (`AURORA.js`):
 
 | Feature | Operation | Implementation |
 |---|---|---|
-| upload datastore | 'Upload datastore' panel | Create a folder in `/data`; Save graph file in the folder and name it `graph`; Launch `AURORA` program over the graph |
+| upload datastore | 'Upload datastore' panel | Create a folder in `/data`; Save graph file in the folder and name it `graph`; Launch `DAVINCI` program over the graph |
 | look over datastores | 'Load datastore' panel | Keep track of `DAVINCI` running progress of each unready datastore |
 | load a datastore | 'Load datastore' panel | Display labels (`labels.json` from back-end) and graph profile (`GraphInfo.json` from back-end); Put limits (upper limits of ego degree and ring length) on adding default patterns (`limits.json` from back-end) |
 | generate patterns | 'Load datastore' panel | Launch `DAVINCI` program over `patterns.json` with specified parameters; Create Sigma objects for each pattern; Draw patterns (nodes are placed arbitraly) in the specified organize way; Run layout algorithm `ForceAtlas2` over each pattern; Rotate and scale patterns in order that each pattern fully occupies its container |
