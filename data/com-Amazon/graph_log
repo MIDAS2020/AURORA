@@ -1,0 +1,82 @@
+[2018-3-19 15:07:59]
+stdout: New style to input the graph...
+
+[2018-3-19 15:08:01]
+stdout: the bin size of 0 is 154312
+the bin size of 1 is 154312
+the bin size of 2 is 154312
+the bin size of 3 is 154312
+the bin size of 4 is 154312
+the bin size of 5 is 154312
+
+[2018-3-19 15:08:01]
+stdout: Tid: 0, 000000 edges have been pre-processed 
+Tid: 1, 000000 edges have been pre-processed 
+Tid: 2, 000000 edges have been pre-processed 
+Tid: 4, 000000 edges have been pre-processed 
+Tid: 3, 000000 edges have been pre-processed 
+Tid: 5, 000000 edges have been pre-processed 
+Tid: 0, 100000 edges have been pre-processed 
+Tid: 2, 100000 edges have been pre-processed 
+Tid: 3, 100000 edges have been pre-processed 
+Tid: 4, 100000 edges have been pre-processed 
+Tid: 1, 100000 edges have been pre-processed 
+Tid: 5, 100000 edges have been pre-processed 
+Arrange sorted edges...
+
+[2018-3-19 15:08:01]
+stdout: -----------------------------------------
+3-Truss
+k:3 Cnt:255972
+-----------------------------------------
+-----------------------------------------
+4-Truss
+k:4 Cnt:244092
+-----------------------------------------
+-----------------------------------------
+5-Truss
+k:5 Cnt:161418
+-----------------------------------------
+-----------------------------------------
+6-Truss
+k:6 Cnt:52536
+-----------------------------------------
+-----------------------------------------
+7-Truss
+k:7 Cnt:642
+-----------------------------------------
+-----------------------------------------
+8-Truss
+k:8 Cnt:0
+-----------------------------------------
+mark and cal truss and cal Gout_degree...
+calcScoreForComPatterns....
+the bin size of 0 is 7665
+the bin size of 1 is 7665
+the bin size of 2 is 7664
+the bin size of 3 is 7664
+the bin size of 4 is 7664
+the bin size of 5 is 7664
+
+[2018-3-19 15:08:02]
+stdout: Tid: 0, 000000 edges have been pre-processed 
+Tid: 1, 000000 edges have been pre-processed 
+Tid: 4, 000000 edges have been pre-processed 
+Tid: 2, 000000 edges have been pre-processed 
+Tid: 3, 000000 edges have been pre-processed 
+Tid: 5, 000000 edges have been pre-processed 
+threadId: 0 : 0000 have done
+threadId: 1 : 0000 have done
+threadId: 2 : 0000 have done
+threadId: 3 : 0000 have done
+threadId: 4 : 0000 have done
+threadId: 5 : 0000 have done
+searching Stars patterns... 
+searching Lines, Circles and Individuals patterns... 
+281
+evaluating patterns coverage scores... 
+evaluating patterns cognition scores... 
+output step1...
+
+[2018-3-19 15:08:02]
+child process exited with code 0
