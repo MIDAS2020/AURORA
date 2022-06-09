@@ -47,11 +47,11 @@ Techniques in back-end (`AURORA.js`):
 
 
 # Installation
-
+0. Unzip js.zip and node_modules.zip
 1. Install [Node.js](https://nodejs.org/en/)
 2. Install Node.js packages via command `npm install`
 3. Start server via command `node AURORA.js`
 4. Access web via `http://localhost:3000/AURORA` or `http://<your_server_ip>:3000/AURORA`
-5. Load patterns via Load Local Patterns
+5. Load patterns via 'Load Local Patterns' (Patterns.txt)
 
 
