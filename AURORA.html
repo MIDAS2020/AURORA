@@ -1,0 +1,2088 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>DAVINCI</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+
+    <style>
+        #pageloader {
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            position: fixed;
+            margin-top: -32px;
+            height: 100%;
+            width: 100%;
+            z-index: 9999;
+        }
+
+        #pageloader img {
+            top: 50%;
+            left: 50%;
+            margin-left: -32px;
+            margin-top: -132px;
+            position: absolute;
+        }
+
+        #board-tools {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            z-index: 2;
+        }
+
+        #board-help {
+            position: absolute;
+            top: 2px;
+            right: 10px;
+            z-index: 2;
+        }
+
+        #board-help button:hover,
+        #step-count:hover,
+        #pattern-count:hover {
+            cursor: help;
+        }
+
+        .card-header,
+        .card-footer {
+            padding-top: 0.375rem;
+            padding-bottom: 0.375rem;
+        }
+
+        #labels-panel {
+            min-width: 100px;
+            height: 900px;
+        }
+
+        #resize-gap {
+            cursor: col-resize;
+            width: 16px;
+        }
+
+        #resize-gap::after {
+            /* drag icon */
+            content: "";
+            display: block;
+            transform: translate(-50%, -50%);
+            margin-top: 380px;
+            margin-left: 8px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #ddd;
+            box-shadow: 0 20px #ddd, 0 40px #ddd;
+        }
+
+        .collapse {
+            display: none;
+        }
+
+        .collapse.show {
+            display: block;
+        }
+
+        .list-group-item .fa {
+            margin-right: 5px;
+        }
+
+        .list-group .list-group-item.inside-list-group-item:first-child {
+            border-top: 1px solid rgba(0, 0, 0, .125);
+        }
+
+        .list-group .list-group-item.inside-list-group-item:last-child {
+            margin-bottom: -1px;
+        }
+
+        .sigma-board-container {
+            min-width: 500px;
+            height: 900px;
+        }
+
+        #generated-patterns-panel {
+            height: 697px;
+        }
+
+        .sigma-default-pattern-container {
+            height: 100px;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .sigma-generated-pattern-container {
+            height: 100px;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .tooltip-inner {
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .scrolly {
+            overflow-y: auto !important;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="pageloader">
+        <img src="img/Ripple-1s-200px.svg" alt="processing..." />
+    </div>
+    <div class="container-fluid">
+        <div class="row my-3">
+            <div class="col-9 pl-3 pr-2">
+                <button type="button" class="btn btn-success btn-lg" id="generate-patterns-button" data-toggle="modal" data-target="#generate-patterns-modal">
+                    <i class="fa fa-plus-square"></i>
+                    Generate patterns
+                </button>
+                <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#load-local-patterns-modal">
+                    <i class="fa fa-file-text"></i>
+                    Load local patterns
+                </button>
+                <div class="pull-right">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary btn-lg" id="timer">
+                            <i class="fa fa-play"></i>
+                            <span>00:00</span>
+                        </button>
+                        <button type="button" class="btn btn-warning btn-lg" id="step-count" data-toggle="tooltip" data-trigger="hover" data-placement="bottom"
+                            data-html="true" data-original-title="">
+                            Steps
+                            <span class="badge badge-light">0</span>
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" id="pattern-count" data-toggle="tooltip" data-trigger="hover" data-placement="bottom"
+                            data-html="true" data-original-title="">
+                            Used patterns
+                            <span class="badge badge-light">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-3 px-3 py-1">
+                <h2>Datastore:
+                    <span class="badge badge-secondary" id="current-datastore">None</span>
+                    <span class="text-info" id="current-datastore-info" style="font-size: 20px; display: none;" data-toggle="tooltip" data-trigger="hover"
+                        data-placement="bottom" data-html="true" data-original-title="">
+                        <i class="fa fa-info-circle"></i>
+                    </span>
+                </h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="pl-3 pr-0" id="labels-panel">
+                <div class="card scrolly">
+                    <div class="card-header">
+                        Labels
+                    </div>
+                    <div class="card-header" style="padding: 7px 10px 7px 10px;">
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" style="border: 1px;">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                            </div>
+                            <input type="search" class="form-control" id="labels-search-box" placeholder="Search..." style="border: 0; padding: 0; padding-left: 5px;">
+                        </div>
+                    </div>
+                    <div class="list-group list-group-flush scrolly">
+                        <div id="nested-labels"></div>
+                        <div id="plain-labels"></div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        no label
+                    </div>
+                </div>
+            </div>
+            <div id="resize-gap"></div>
+            <div class="col pl-0 pr-2">
+                <div id="board-tools">
+                    <div class="btn-group" role="group">
+                        <!-- ***************************** reset ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="New window"
+                            onclick="reset(s);">
+                            <i class="fa fa-file-o"></i>
+                        </button>
+                        <!-- ***************************** scale ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Expand"
+                            onclick="scaleNodes(s, 0 == s.activeState.nbNodes() ? s.graph.nodes() : s.activeState.nodes(), 1.2);">
+                            <i class="fa fa-expand"></i>
+                        </button>
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Shrink"
+                            onclick="scaleNodes(s, 0 == s.activeState.nbNodes() ? s.graph.nodes() : s.activeState.nodes(), 0.8);">
+                            <i class="fa fa-compress"></i>
+                        </button>
+                        <!-- ***************************** rotate ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Rotate clockwise"
+                            onclick="if (1 != s.activeState.nbNodes()) rotateNodes(s, 0 == s.activeState.nbNodes() ? s.graph.nodes() : s.activeState.nodes(), Math.PI / 4);">
+                            <i class="fa fa-rotate-right"></i>
+                        </button>
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Rotate anticlockwise"
+                            onclick="if (1 != s.activeState.nbNodes()) rotateNodes(s, 0 == s.activeState.nbNodes() ? s.graph.nodes() : s.activeState.nodes(), -Math.PI / 4);">
+                            <i class="fa fa-rotate-left"></i>
+                        </button>
+                        <!-- ***************************** multi select ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Select with lasso"
+                            onclick="if (s.lasso.isActive) s.lasso.deactivate(); else s.lasso.activate();">
+                            <i class="fa fa-lastfm"></i>
+                        </button>
+                        <!-- ***************************** detach label ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" title="Detach label"
+                            onclick="detachLabel(s, s.activeState.nodes());">
+                            <i class="fa fa-eraser"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="board-help">
+                    <div class="btn-group" role="group">
+                        <!-- ***************************** help ***************************** -->
+                        <button type="button" class="btn btn-light" data-toggle="tooltip" data-trigger="hover" data-placement="bottom" data-html="true"
+                            title="<strong><u>Add node</u></strong><br>click background (double click when some nodes are selected)<br><strong><u>Add edge</u></strong><br>click source node and target node successively<br><strong><u>Attach/Change label</u></strong><br>select node and double click the specific label<br><strong><u>Move node(s)/edge(s)</u></strong><br>drag node with left mouse button<br><strong><u>Add pattern</u></strong><br>drag pattern to the board<br><strong><u>Remove node(s)</u></strong><br>right click node<br><strong><u>Remove edge</u></strong><br>right click edge<br><strong><u>Select node(s)</u></strong><br>click node or select with lasso<br><strong><u>Clear select status</u></strong><br>click background<br>">
+                            <i class="fa fa-question-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="board" class="sigma-board-container rounded border border-dark"></div>
+            </div>
+            <div class="col-3 pl-2 pr-3" id="patterns-panel">
+                <div class="card">
+                    <div class="card-header">
+                        Default patterns
+                    </div>
+                    <div class="card-body row" id="default-patterns-list">
+                    </div>
+                </div>
+                <br>
+                <div class="card" id="generated-patterns-panel">
+                    <div class="card-header">
+                        <span>Generated patterns</span>
+                        <select class="float-right" id="generated-patterns-organize-way" style="display: none; border: 0; height: 24px;">
+                            <option value="group-by-size">group by size</option>
+                            <option value="single-page">single page</option>
+                            <option value="4-per-page">4 per page</option>
+                            <option value="8-per-page">8 per page</option>
+                            <option value="12-per-page">12 per page</option>
+                            <option value="16-per-page">16 per page</option>
+                            <option value="20-per-page">20 per page</option>
+                        </select>
+                        <hr style="display: none; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                        <ul class="nav nav-pills card-header-pills" id="generated-patterns-tab" role="tablist">
+                        </ul>
+                    </div>
+                    <div class="card-body scrolly">
+                        <div class="tab-content" id="generated-patterns-tab-content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="upload-datastore-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Upload datastore</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="upload-datastore-name">Name</label>
+                                <input type="text" id="upload-datastore-name" name="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="upload-file">Graph file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input form-control" id="upload-file" name="file" required>
+                                    <label class="custom-file-label" for="upload-file">Choose file...</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="load-datastore-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Load datastore</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="load-datastore-name">Available datastores</label>
+                                <select class="custom-select form-control" id="load-datastore-name" required>
+                                </select>
+                            </div>
+                            <hr>
+                            <div class="form-group">
+                                <label for="datastore-pending-list">Pending list</label>
+                                <ul id="datastore-pending-list">
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="generate-patterns-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                Generate patterns
+                                <br>
+                                <small class="text-muted">
+                                    Note that this process may take some minutes
+                                </small>
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="generate-patterns-num">Patterns number</label>
+                                <input type="number" min="1" value="3" class="form-control" id="generate-patterns-num" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="generate-patterns-labels-type">Label sets</label>
+                                <select class="custom-select form-control" id="generate-patterns-labels-type" required>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="generate-patterns-min-size">Min size</label>
+                                <input type="number" min="3" value="3" class="form-control" id="generate-patterns-min-size" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="generate-patterns-max-size">Max size</label>
+                                <input type="number" min="4" max="15" value="5" class="form-control" id="generate-patterns-max-size" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="generate-patterns-organize-way">Organize way</label>
+                                <select class="custom-select form-control" id="generate-patterns-organize-way" required>
+                                    <option value="group-by-size">group by size</option>
+                                    <option value="single-page">single page</option>
+                                    <option value="4-per-page">4 per page</option>
+                                    <option value="8-per-page">8 per page</option>
+                                    <option value="12-per-page">12 per page</option>
+                                    <option value="16-per-page">16 per page</option>
+                                    <option value="20-per-page">20 per page</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="load-local-patterns-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Load local patterns</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="upload-patterns-file">Patterns file</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input form-control" id="upload-patterns-file" name="file" required>
+                                    <label class="custom-file-label" for="upload-patterns-file">Choose file...</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fixed-labels-type">Label sets</label>
+                                <select class="custom-select form-control" id="fixed-labels-type" required>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="load-local-patterns-organize-way">Organize way</label>
+                                <select class="custom-select form-control" id="load-local-patterns-organize-way" required>
+                                    <option value="group-by-size">group by size</option>
+                                    <option value="single-page">single page</option>
+                                    <option value="4-per-page">4 per page</option>
+                                    <option value="8-per-page">8 per page</option>
+                                    <option value="12-per-page">12 per page</option>
+                                    <option value="16-per-page">16 per page</option>
+                                    <option value="20-per-page">20 per page</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="customized-hub-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Add customized ego</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="customized-hub-degree">Specify degree of ego</label>
+                                <input type="number" min="3" max="20" value="6" class="form-control" id="customized-hub-degree" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="customized-ring-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Add customized ring</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="customized-ring-length">Specify length of ring</label>
+                                <input type="number" min="3" max="20" value="6" class="form-control" id="customized-ring-length" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">OK</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery JS -->
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+
+    <script>
+        'use strict';
+        let NODE_SIZE = 17;
+        let NODE_COLOR = '#b4b4b4';
+        let EDGE_SIZE = 8;
+        let EDGE_COLOR = '#dbae58';
+        let LABEL_COLOR = 'fbe9e7';
+        let LABEL_SIZE = 17;
+        let MIN_NODE_DISTANCE = 32;
+        let NODE_HALO_SIZE = 10;
+        let NODE_HALO_COLOR = 'rgba(236, 81, 72, 0.2)';
+        let PATTERN_NODE_SIZE = 4;
+        let PATTERN_EDGE_SIZE = 3;
+        let PATTERN_LABEL_SIZE = 17;
+        let LAYOUT_RUN_TIME = 3000;
+
+        let boardSigmaSettings = {
+            defaultNodeColor: NODE_COLOR,
+            defaultEdgeColor: EDGE_COLOR,
+            edgeColor: 'default',
+            defaultLabelColor: LABEL_COLOR,
+            defaultLabelSize: LABEL_SIZE,
+            fontStyle: 'bold',
+            labelAlignment: 'center',
+            labelThreshold: 0,
+            enableEdgeHovering: true,
+            autoRescale: false,
+            mouseWheelEnabled: false,
+            doubleClickEnabled: false,
+            nodeActiveBorderSize: 2,
+            nodeActiveOuterBorderSize: 3,
+            defaultNodeActiveBorderColor: '#fff',
+            defaultNodeActiveOuterBorderColor: 'rgb(236, 81, 72)',
+            nodeHaloColor: NODE_HALO_COLOR,
+            nodeHaloSize: NODE_HALO_SIZE
+        };
+        let patternSigmaSettings = {
+            defaultNodeColor: NODE_COLOR,
+            defaultEdgeColor: EDGE_COLOR,
+            defaultLabelColor: LABEL_COLOR,
+            defaultLabelSize: PATTERN_LABEL_SIZE,
+            fontStyle: 'bold',
+            labelAlignment: 'center',
+            labelThreshold: 0,
+            edgeColor: 'default',
+            autoRescale: false,
+            touchEnabled: false,
+            mouseEnabled: false,
+            mouseWheelEnabled: false,
+            doubleClickEnabled: false,
+            enableHovering: false,
+            eventsEnabled: false
+        };
+
+        let FORCE_ATLAS2_SETTINGS = {
+            barnesHutOptimize: false
+        };
+
+        let defaultPatterns = [{
+            type: 'default',
+            title: 'Two segments',
+            n: [[-Math.SQRT1_2, Math.SQRT1_2], [0, 0], [1, 0]],
+            e: [[0, 1], [1, 2]]
+        }, {
+            type: 'default',
+            title: 'Triangle',
+            n: [[-1, 0], [1, 0], [0, -Math.sqrt(3)]],
+            e: [[0, 1], [0, 2], [1, 2]]
+        }, {
+            type: 'hub',
+            title: 'Customized ego',
+            degree: 6
+        }, {
+            type: 'ring',
+            title: 'Customized ring',
+            length: 6
+        }];
+
+        let s;
+        let mouseMoved = false; // distinuish between drag and click
+        let beforeDragNodeId = undefined; // edge source
+        let draggingNodes = {}; // unalbe to merge nodes with different labels
+        let dragDx, dragDy; // fix: drag multiple nodes
+
+        let datastoreName;
+
+        let generatedPatternsTab = $('#generated-patterns-tab');
+        let generatedPatternsContent = $('#generated-patterns-tab-content');
+        let generatedPatternSigmaObjects = [];
+        let generatedPatternSigmaObjectsByTab = {};
+
+        let customizedHubRadius, customizedRingRadius;
+        let addPatternCenter;
+
+        let displayPatterns = []; // generated patterns on current screen
+
+        let fixedLabels = {
+            'aids10k': ["C", "O", "Cu", "N", "S", "P", "Cl", "Zn", "B", "Br", "Co", "Mn", "As", "Al", "Ni", "Se", "Si",
+                "V", "Sn", "I", "F", "Li", "Sb", "Fe", "Pd", "Hg", "Bi", "Na", "Ca", "Ti", "Ho", "Ge", "Pt", "Ru", "Rh", "Cr", "Ga", "K", "Ag", "Au",
+                "Tb", "Ir", "Te", "Mg", "Pb", "W", "Cs", "Mo", "Re", "Cd", "Os", "Pr", "Nd", "Sm", "Gd", "Yb", "Er", "U", "Tl", "Ac"],
+            'aids40k': ["C", "O", "Cu", "N", "S", "P", "Cl", "Zn", "B", "Br", "Co", "Mn", "As", "Al", "Ni", "Se", "Si",
+                "V", "Sn", "I", "F", "Li", "Sb", "Fe", "Pd", "Hg", "Bi", "Na", "Ca", "Ti", "Ho", "Ge", "Pt", "Ru", "Rh", "Cr", "Ga", "K", "Ag", "Au",
+                "Tb", "Ir", "Te", "Mg", "Pb", "W", "Cs", "Mo", "Re", "Cd", "Os", "Pr", "Nd", "Sm", "Gd", "Yb", "Er", "U", "Tl", "Ac"],
+            'emolecul': ["Cs", "Cu", "Yb", "Cl", "Pt", "Pr", "Co", "Cr", "Li", "Cd", "Ce", "Hg", "Hf", "La", "Lu",
+                "Pd", "Tl", "Tm", "Ho", "Pb", "*", "Ti", "Te", "Dy", "Ta", "Os", "Mg", "Tb", "Au", "Se",
+                "F", "Sc", "Fe", "In", "Si", "B", "C", "As", "Sn", "N", "Ba", "O", "Eu", "H", "Sr", "I", "Mo",
+                "Mn", "K", "Ir", "Er", "Ru", "Ag", "W", "V", "Ni", "P", "S", "Nb",
+                "Y", "Na", "Sb", "Al", "Ge", "Rb", "Re", "Gd", "Ga", "Br", "Rh", "Ca", "Bi", "Zn", "Zr"],
+            'pubchem': ["H", "C", "O", "N", "Cl", "S", "F", "P", "Br", "I", "Na", "Si",
+                "As", "Hg", "Ca", "K", "B", "Sn", "Se", "Al", "Fe", "Mg", "Zn", "Pb", "Co", "Cu",
+                "Cr", "Mn", "Sb", "Cd", "Ni", "Be", "Ag", "Li", "Tl", "Sr", "Bi", "Ce", "Ba", "U", "Ge",
+                "Pt", "Te", "V", "Zr", "Cs", "Au", "Mo", "W", "La", "Ti", "Rh", "Lu", "Pd", "In", "Eu", "Ga",
+                "Pr", "Ho", "Th", "Ta", "Tc", "Tb", "Ir", "Nd", "Nb", "Rb", "Kr", "Yb", "Cm", "Pu", "Cf", "Hf",
+                "He", "Pa", "Tm", "Pm", "Po", "Xe", "Dy", "Os", "Md", "Sc", "Ar", "At", "Sm", "Er", "Ru",
+                "Es", "Ac", "Am", "Ne", "Y", "Re", "Gd", "No", "Rn", "Np", "Fm", "Bk"]
+        };
+
+        let timerEnabled = false;
+        let timer;
+
+        function Counter(type) {
+            this.counter = {};
+            this.type = type;
+            this.display = function () {
+                let msg = '<strong><u>Details</u></strong><br>';
+                let cnt = 0;
+                for (let t in this.counter) {
+                    msg += `<b>${t}: </b>${this.counter[t]}<br>`;
+                    cnt += this.counter[t];
+                }
+                if (0 == cnt)
+                    msg += 'None<br>';
+                $(`#${this.type}-count`).attr('data-original-title', msg);
+                $(`#${this.type}-count span`).text(cnt);
+            }
+            this.inc = function (name) {
+                if (!(name in this.counter))
+                    this.counter[name] = 0;
+                this.counter[name] += 1;
+                this.display();
+            }
+            this.reset = function () {
+                this.counter = {};
+                this.display();
+            }
+            this.display();
+        }
+        let stepCounter = new Counter('step'); // Add pattern, Add node, Add edge, Remove node(s), Remove edge
+        let patternCounter = new Counter('pattern'); // Default, Generated
+
+        /**
+         * Reset drawing board
+         * 
+         * @param   {Sigma} s
+         */
+        function reset(s) {
+            s.camera.goTo({ x: 0, y: 0 });
+            s.nodeCnt = 0;
+            s.edgeCnt = 0;
+            s.graph.clear();
+            s.refresh();
+
+            stepCounter.reset();
+            patternCounter.reset();
+        }
+
+        /**
+         * Add a node into board
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    x
+         * @param   {number}    y
+         * @param   {boolean}   ignoreMerge If set to true, the function allows adding an overlapping node
+         * @param   {string}    label
+         * @returns {boolean}   If a new node successfully added
+         */
+        function addNode(s, x, y, ignoreMerge, label) {
+            if (true != ignoreMerge) {
+                let neighbor = s.graph.nodes().find(function (n) {
+                    return Math.sqrt(Math.pow(n.x - x, 2) + Math.pow(n.y - y, 2)) < s.minNodeDistance;
+                });
+                if (undefined != neighbor) {
+                    console.error('[addNode] too close to node ' + neighbor.id);
+                    return false;
+                }
+            }
+            if (undefined == label)
+                label = '';
+            let id = s.nodeCnt++;
+            s.graph.addNode({
+                id: id,
+                size: s.nodeSize,
+                x: x,
+                y: y,
+                label: label,
+                active: false // NOT WORK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            });
+            s.refresh();
+            return true;
+        }
+
+        /**
+         * Returns the edge connecting node x and node y
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    x   The id of source node
+         * @param   {number}    y   The id of target node
+         * @returns {(Edgge|undefined)} If there is no such edge, returns undefined
+         */
+        function findEdge(s, x, y) {
+            return s.graph.edges().find(function (e) {
+                return e.source == x && e.target == y ||
+                    e.source == y && e.target == x;
+            });
+        }
+
+        /**
+         * Add an edge into board
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    x   The id of source node
+         * @param   {number}    y   The id of target node
+         * @returns {boolean}   If a new edge successfully added
+         */
+        function addEdge(s, x, y, l) {
+            let nodeX = s.graph.nodes().find(function (n) {
+                return n.id == x;
+            });
+            if (undefined == nodeX) {
+                console.error('[addEdge] not found node ' + x);
+                return false;
+            }
+            let nodeY = s.graph.nodes().find(function (n) {
+                return n.id == y;
+            });
+            if (undefined == nodeY) {
+                console.error('[addEdge] not found node ' + y);
+                return false;
+            }
+            if (nodeX == nodeY) {
+                console.error('[addEdge] same source and target');
+                return false;
+            }
+            if (undefined != findEdge(s, x, y)) {
+                console.error('[addEdge] edge already exists');
+                return false;
+            }
+            let id = s.edgeCnt++;
+            s.graph.addEdge({
+                id: id,
+                source: x,
+                target: y,
+                size: s.edgeSize
+            });
+            s.refresh();
+            return true;
+        }
+
+        /**
+         * Check if a node at selected status
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    x   The id of node
+         */
+        function inActiveState(s, x) {
+            return undefined != s.activeState.nodes().find(n => n.id == x);
+        }
+
+        /**
+         * Remove nodes until no overlapping nodes exist
+         * 
+         * @param   {Sigma}     s
+         */
+        function mergeNodes(s) {
+            let handled,
+                nodeDropList,
+                edgeAddList,
+                nodeMap,
+                nodes = s.graph.nodes(),
+                num = nodes.length;
+
+            // unalbe to merge nodes with different labels
+            for (let i = 0; i < num; ++i)
+                for (let j = i + 1; j < num; ++j)
+                    if (Math.sqrt(Math.pow(nodes[i].x - nodes[j].x, 2) + Math.pow(nodes[i].y - nodes[j].y, 2)) < s.minNodeDistance)
+                        if (nodes[i].label != '' && nodes[j].label != '' && nodes[i].label != nodes[j].label) {
+                            alert(`Unable to merge nodes with different labels ('${nodes[i].label}' and '${nodes[j].label}')!`);
+                            s.graph.nodes().forEach(n => {
+                                if (n.id in draggingNodes)
+                                    [n.x, n.y] = draggingNodes[n.id];
+                            });
+                            s.refresh();
+                            return;
+                        }
+
+            while (true) {
+                handled = new Set();
+                nodeDropList = new Set();
+                edgeAddList = [];
+                nodeMap = {};
+                nodes = s.graph.nodes();
+                num = nodes.length;
+                nodes.forEach(n => nodeMap[n.id] = n.id);
+                for (let i = 0; i < num; ++i)
+                    if (!handled.has(nodes[i].id)) {
+                        let minI = -1, minD = 1e20;
+                        for (let j = i + 1; j < num; ++j)
+                            if (!handled.has(nodes[j].id)) {
+                                let d = Math.sqrt(Math.pow(nodes[i].x - nodes[j].x, 2) + Math.pow(nodes[i].y - nodes[j].y, 2));
+                                if (d < minD) {
+                                    minI = j;
+                                    minD = d;
+                                }
+                            }
+                        if (minD < s.minNodeDistance) {
+                            let a = i, b = minI; // merge nodes[a] and nodes[b], reserve nodes[a], remove nodes[b]
+                            if (inActiveState(s, nodes[b].id))
+                                [a, b] = [b, a];
+                            s.graph.edges().forEach(e => {
+                                if (e.source == nodes[b].id)
+                                    edgeAddList.push(nodes[a].id, e.target);
+                                else if (e.target == nodes[b].id)
+                                    edgeAddList.push(e.source, nodes[a].id);
+                            });
+                            handled.add(nodes[i].id).add(nodes[minI].id);
+                            if ('' == nodes[a].label) // merge label
+                                nodes[a].label = nodes[b].label;
+                            nodeDropList.add(nodes[b].id);
+                            nodeMap[nodes[b].id] = nodes[a].id;
+                        }
+                    }
+                if (nodeDropList.size) {
+                    console.log('drop nodes', nodeDropList);
+                    nodeDropList.forEach(x => s.graph.dropNode(x));
+                    for (let i = 0; i < edgeAddList.length; i += 2)
+                        addEdge(s, nodeMap[edgeAddList[i]], nodeMap[edgeAddList[i + 1]]); // restore edges among removed nodes
+                } else
+                    break;
+            }
+            s.refresh();
+        }
+
+        /**
+         * Rotate nodes by a certain degree
+         * 
+         * @param   {Sigma}     s
+         * @param   {array}     nodes       Target nodes
+         * @param   {number}    angle       The clockwise rotation angle
+         * @param   {boolean}   ignoreMerge If set to true, the process allows overlapping nodes
+         */
+        function rotateNodes(s, nodes, angle, ignoreMerge) {
+            let num = nodes.length;
+            if (1 == num)
+                return;
+            let minX = 1e20, maxX = -1e20, minY = 1e20, maxY = -1e20;
+            nodes.forEach(n => {
+                minX = Math.min(minX, n.x);
+                maxX = Math.max(maxX, n.x);
+                minY = Math.min(minY, n.y);
+                maxY = Math.max(maxY, n.y);
+            });
+            let oX = (minX + maxX) / 2, oY = (minY + maxY) / 2;
+            nodes.forEach(n => {
+                let x = n.x - oX, y = n.y - oY;
+                n.x = x * Math.cos(angle) - y * Math.sin(angle) + oX;
+                n.y = x * Math.sin(angle) + y * Math.cos(angle) + oY;
+            });
+            s.refresh();
+            if (true != ignoreMerge)
+                mergeNodes(s);
+        }
+
+        /**
+         * Expend or shrink selected nodes
+         * 
+         * @param   {Sigma}     s
+         * @param   {array}     nodes       Target nodes
+         * @param   {number}    ratio       Scaling ratio. If larger than 1, expand pattern. If not, shrink pattern.
+         * @param   {boolean}   ignoreMerge If set to true, the process allows overlapping nodes
+         */
+        function scaleNodes(s, nodes, ratio, ignoreMerge) {
+            let num = nodes.length;
+            if (1 == num || 1.0 == ratio)
+                return;
+            let sumX = 0.0, sumY = 0.0;
+            nodes.forEach(n => {
+                sumX += n.x;
+                sumY += n.y;
+            });
+            let oX = sumX / num, oY = sumY / num;
+            nodes.forEach(n => {
+                n.x = (n.x - oX) * ratio + oX;
+                n.y = (n.y - oY) * ratio + oY;
+            });
+            s.refresh();
+            if (true != ignoreMerge)
+                mergeNodes(s);
+        }
+
+        /**
+         * Detach label from nodes
+         * 
+         * @param   {Sigma}     s
+         * @param   {array}     nodes   Target nodes
+         */
+        function detachLabel(s, nodes) {
+            nodes.forEach(n => n.label = '');
+            s.activeState.dropNodes();
+            s.refresh();
+        }
+
+        /**
+         * Attach label from nodes
+         * 
+         * @param   {Sigma}     s
+         * @param   {array}     nodes   Target nodes
+         * @param   {string}    label
+         */
+        function attachLabel(s, nodes, label) {
+            nodes.forEach(n => n.label = label);
+            s.activeState.dropNodes();
+            s.refresh();
+        }
+
+        /**
+         * Apply layout algorithm to graph
+         * 
+         * @param   {Sigma}     s
+         * @param   {string}    opt Available layout
+         */
+        function changeLayout(s, opt) {
+            switch (opt) {
+                case 'dagre':
+                    sigma.layouts.dagre.configure(s, {
+                        rankdir: 'TB'
+                    });
+                    sigma.layouts.dagre.start(s);
+                    break;
+                case 'forceAtlas2':
+                    s.startForceAtlas2({});
+                    setTimeout(function () {
+                        s.stopForceAtlas2();
+                    }, 5000);
+                    break;
+                case 'fruchtermanReingold':
+                    sigma.layouts.fruchtermanReingold.start(s, {});
+                    break;
+                case 'noverlap':
+                    s.configNoverlap({});
+                    s.startNoverlap();
+                    break;
+                case 'forceLink':
+                    sigma.layouts.startForceLink(s);
+                    setTimeout(function () {
+                        sigma.layouts.stopForceLink();
+                    }, 5000);
+                    break;
+                case 'layout1':
+                    s.startForceAtlas2(FORCE_ATLAS2_SETTINGS);
+                    setTimeout(function () {
+                        s.stopForceAtlas2();
+                        s.configNoverlap({});
+                        s.startNoverlap();
+                    }, 5000);
+                    break;
+                case 'layout2':
+                    sigma.layouts.startForceLink(s);
+                    setTimeout(function () {
+                        sigma.layouts.stopForceLink();
+                        s.configNoverlap({});
+                        s.startNoverlap();
+                    }, 5000);
+                    break;
+            }
+        }
+
+        /**
+         * Find the graph placed angle that leads to highest occupation and rotate graph with this angle
+         * Usually used before scaleTofitContainer
+         * 
+         * @param   {Sigma}     s
+         */
+        function rotateTofitContainer(s) {
+            if (s.graph.nodes().length <= 1)
+                return;
+            let maxI = -1;
+            let maxR = -1e20;
+            // fix: weight and height of an hidden element is 0
+            let w = s.renderers[0].container.offsetWidth && s.renderers[0].container.offsetWidth > 0 ? s.renderers[0].container.offsetWidth : s.containerDefaultWeight;
+            let h = s.renderers[0].container.offsetHeight && s.renderers[0].container.offsetHeight > 0 ? s.renderers[0].container.offsetHeight : s.containerDefaultHeight;
+            for (let i = 0; i < 18; ++i) {
+                let nodes = s.graph.nodes();
+                let num = nodes.length;
+                let minX = 1e20, maxX = -1e20, minY = 1e20, maxY = -1e20;
+                nodes.forEach(n => {
+                    minX = Math.min(minX, n.x);
+                    maxX = Math.max(maxX, n.x);
+                    minY = Math.min(minY, n.y);
+                    maxY = Math.max(maxY, n.y);
+                });
+                let r = Math.min(w / (maxX - minX), h / (maxY - minY));
+                if (r > maxR) {
+                    maxI = i;
+                    maxR = r;
+                }
+                rotateNodes(s, nodes, Math.PI / 18, true);
+            }
+            rotateNodes(s, s.graph.nodes(), Math.PI / 18 * (18 + maxI), true);
+        }
+
+        /**
+         * Scale up graph as much as possible to fully occupy the drawing board
+         * Usually used after rotateTofitContainer
+         * 
+         * @param   {Sigma}     s
+         */
+        function scaleTofitContainer(s) {
+            let nodes = s.graph.nodes();
+            let num = nodes.length;
+            if (1 == num) {
+                let p = s.camera.cameraPosition(0, 0);
+                nodes[0].x = p.x;
+                nodes[0].y = p.y;
+                s.refresh();
+                return;
+            }
+            // fix: weight and height of an hidden element is 0
+            let w = s.renderers[0].container.offsetWidth && s.renderers[0].container.offsetWidth > 0 ? s.renderers[0].container.offsetWidth : s.containerDefaultWeight;
+            let h = s.renderers[0].container.offsetHeight && s.renderers[0].container.offsetHeight > 0 ? s.renderers[0].container.offsetHeight : s.containerDefaultHeight;
+            let minX = 1e20, maxX = -1e20, minY = 1e20, maxY = -1e20;
+            nodes.forEach(n => {
+                minX = Math.min(minX, n.x);
+                maxX = Math.max(maxX, n.x);
+                minY = Math.min(minY, n.y);
+                maxY = Math.max(maxY, n.y);
+            });
+            let oX = (minX + maxX) / 2, oY = (minY + maxY) / 2;
+            let r = Math.min(w / (maxX - minX), h / (maxY - minY)) * 0.9;
+            nodes.forEach(n => {
+                n.x = (n.x - oX) * r;
+                n.y = (n.y - oY) * r;
+            });
+            s.camera.goTo({ x: 0, y: 0 });
+            s.refresh();
+        }
+
+        /**
+         * Draw default pattern in drawing board
+         * 
+         * @param   {Sigma}     s
+         * @param   {object}    pattern
+         */
+        function drawDefaultPattern(s, pattern) {
+            switch (pattern.type) {
+                case 'default':
+                    pattern.n.forEach(n => addNode(s, n[0], n[1], true));
+                    pattern.e.forEach(pair => addEdge(s, pair[0], pair[1]));
+                    scaleTofitContainer(s);
+                    break;
+                case 'hub':
+                    drawCustomizedHub(s, 0, 0, pattern.degree, true);
+                    break;
+                case 'ring':
+                    drawCustomizedRing(s, 0, 0, pattern.length, true);
+                    break;
+            }
+        }
+
+        /**
+         * Draw generated pattern in drawing board
+         * 
+         * @param   {Sigma}     s
+         * @param   {object}    pattern
+         */
+        function drawGeneratedPattern(s, pattern) {
+            let gap = PATTERN_NODE_SIZE * 5;
+            if (undefined != pattern.labels) {
+                for (let i = 0; i < pattern.n; ++i)
+                    addNode(s, Math.random() * gap * 2 - gap, i * gap, true, pattern.labels[i]);
+            } else {
+                for (let i = 0; i < pattern.n; ++i)
+                    addNode(s, Math.random() * gap * 2 - gap, i * gap, true);
+            }
+            pattern.e.forEach(pair => addEdge(s, pair[0], pair[1]));
+            // sigma.layouts.startForceLink(s, {}); // ForceLink has to be performed one by one
+            s.startForceAtlas2({}); // ForceAtlas2 is able to be performed simultaneously
+            setTimeout(() => {
+                // sigma.layouts.stopForceLink();
+                // sigma.layouts.killForceLink(); // must kill it!!!!
+                s.stopForceAtlas2(FORCE_ATLAS2_SETTINGS);
+                s.configNoverlap({});
+                s.startNoverlap();
+                setTimeout(() => {
+                    rotateTofitContainer(s);
+                    scaleTofitContainer(s);
+                }, LAYOUT_RUN_TIME);
+            }, LAYOUT_RUN_TIME);
+        }
+
+        /**
+         * Draw customized hub in drawing board
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    cX          Coordinate of draw center
+         * @param   {number}    cY          Coordinate of draw center
+         * @param   {number}    degree      Degree of hub
+         * @param   {boolean}   firstDraw   Set to true when generating default patterns panel in web page. Set to false in real application.
+         */
+        function drawCustomizedHub(s, cX, cY, degree, firstDraw) {
+            let angle = Math.PI * 2 / degree;
+            let base = s.nodeCnt;
+            addNode(s, cX, cY, true);
+            let x = firstDraw ? -1 : -customizedHubRadius, y = 0;
+            for (let i = 0; i < degree; ++i) {
+                addNode(s, cX + x, cY + y, true);
+                addEdge(s, base, base + i + 1);
+                [x, y] = [x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)];
+            }
+            if (firstDraw) {
+                scaleTofitContainer(s);
+                customizedHubRadius = -s.graph.nodes()[1].x;
+            } else {
+                s.activeState.dropNodes();
+                for (let i = 0; i < degree + 1; ++i)
+                    s.activeState.addNodes(base + i);
+            }
+            s.refresh();
+        }
+
+        /**
+         * Draw customized ring in drawing board
+         * 
+         * @param   {Sigma}     s
+         * @param   {number}    cX          Coordinate of draw center
+         * @param   {number}    cY          Coordinate of draw center
+         * @param   {number}    length      Length of ring
+         * @param   {boolean}   firstDraw   Set to true when generating default patterns panel in web page. Set to false in real application.
+         */
+        function drawCustomizedRing(s, cX, cY, length, firstDraw) {
+            let angle = Math.PI * 2 / length;
+            let base = s.nodeCnt;
+            let x = firstDraw ? -1 : -customizedRingRadius, y = 0;
+            for (let i = 0; i < length; ++i) {
+                addNode(s, cX + x, cY + y, true);
+                [x, y] = [x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)];
+            }
+            for (let i = 0; i < length; ++i)
+                addEdge(s, base + i, i + 1 < length ? base + i + 1 : base);
+            if (firstDraw) {
+                scaleTofitContainer(s);
+                customizedRingRadius = -s.graph.nodes()[0].x;
+            } else {
+                s.activeState.dropNodes();
+                for (let i = 0; i < length; ++i)
+                    s.activeState.addNodes(base + i);
+            }
+            s.refresh();
+        }
+
+        /**
+         * Generate HTML elements to display labels
+         * 
+         * @param   {array} labels  Raw labels list
+         */
+        function generateLabelsPanel(labels) {
+            labels = labels.map(l => '' + l);
+            let numLabels = labels.filter(l => $.isNumeric(l)).sort((a, b) => parseFloat(a) - parseFloat(b));
+            let wordLabels = labels.filter(l => !$.isNumeric(l)).sort();
+            $('#labels-panel .card-footer').text(0 == labels.length ? 'no label' : 1 == labels.length ? '1 label' : labels.length + ' labels');
+
+            let w = $('#labels-panel').css('width');
+
+            drawNestedLabels($('#nested-labels').empty(), groupLabels(numLabels).concat(groupLabels(wordLabels)), 0);
+            $('#nested-labels .list-group-item[data-toggle="collapse"]').click((e) => {
+                $('.fa', e.target).toggleClass('fa-chevron-right').toggleClass('fa-chevron-down');
+            });
+            $('#nested-labels').show();
+
+            drawPlainLabels($('#plain-labels').empty(), numLabels.concat(wordLabels));
+            $('#labels-search-box').val(''); // reset search box
+            $('#plain-labels').hide();
+
+            // ***************************** attach label *****************************
+            $('#labels-panel a.list-group-item-action').dblclick(e => attachLabel(s, s.activeState.nodes(), $(e.target).text()));
+            $('#labels-panel').css('width', w); // reset panel width
+        }
+
+        /**
+         * Group labels for display
+         * 
+         * @param   {array} labels  Raw labels list
+         * @returns {object}    Grouped labels
+         */
+        function groupLabels(labels) {
+            if (0 == labels.length) return [];
+            let ret = [];
+            let queue = [[0, labels.length, ret]]; // BFS implementation for DFS
+            while (queue.length > 0) {
+                let [l, r, container] = queue.shift();
+                let n = r - l;
+                if (n <= 15) {
+                    for (let i = l; i < r; ++i)
+                        container.push(labels[i]);
+                } else {
+                    let gNum, gSize;
+                    if (n <= 100) {
+                        gNum = Math.ceil(n / 10);
+                        gSize = 10;
+                    } else {
+                        gNum = 10;
+                        gSize = Math.ceil(n / gNum);
+                    }
+                    if (1 <= n % 10 && n % 10 <= 3)
+                        --gNum;
+                    let cl = l, cr;
+                    while (gNum-- > 0) {
+                        cr = cl + gSize;
+                        if (0 == gNum) cr = r;
+                        let reRet = [];
+                        container.push([`${labels[cl]} - ${labels[cr - 1]}`, reRet]);
+                        queue.push([cl, cr, reRet]);
+                        cl = cr;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        /**
+         * Generate HTML elements to display nested labels
+         * 
+         * @param   {jQuery object} container   Parent HTML element
+         * @param   {object}        labels      Grouped labels produced by groupLabels
+         * @param   {number}        depth       Set to 0 initially
+         */
+        function drawNestedLabels(container, labels, depth) {
+            labels.forEach(item => {
+                if (Array.isArray(item)) {
+                    console.assert(2 == item.length, 'invalid labels array!!');
+                    let a = $('<a>', {
+                        'href': `#label-${item[0]}`,
+                        'class': `list-group-item ${depth > 0 ? 'inside-list-group-item' : ''}`,
+                        'data-toggle': 'collapse',
+                    }).html(`<i class="fa fa-chevron-right"></i>${item[0]}`).appendTo(container);
+                    a.css('padding-left', `${10 + depth * 10}px`);
+                    drawNestedLabels($('<div>', {
+                        'class': 'list-group collapse',
+                        'id': `label-${item[0]}`
+                    }).appendTo(container), item[1], depth + 1);
+                } else {
+                    let a = $('<a>', {
+                        'href': 'javascript:void(0)',
+                        'class': `list-group-item ${depth > 0 ? 'inside-list-group-item' : ''} list-group-item-action`
+                    }).text(`${item}`).appendTo(container);
+                    a.css('padding-left', `${20 + depth * 10}px`);
+                }
+            });
+        }
+
+        /**
+         * Generate HTML elements to display labels list (the list will show up when user searches labels with specified keyword)
+         * Called recursively
+         * 
+         * @param   {jQuery object} container   Parent HTML element
+         * @param   {array}         labels      Raw labels list
+         */
+        function drawPlainLabels(container, labels) {
+            labels.forEach(label => {
+                $('<a>', {
+                    'href': 'javascript:void(0)',
+                    'class': 'list-group-item list-group-item-action'
+                }).text(label).appendTo(container);
+            });
+        }
+
+        /**
+         * Add a pattern into drawing board
+         * 
+         * @param   {Sigma}     s   Targe drawing board
+         * @param   {Sigma}     p   Source drawing board with pattern in it
+         * @param   {number}    cX  Coordinate of draw center
+         * @param   {number}    cY  Coordinate of draw center
+         */
+        function addPattern(s, p, cX, cY) {
+            let base = s.nodeCnt;
+            p.graph.nodes().forEach(n => {
+                let id = s.nodeCnt++;
+                s.graph.addNode({
+                    id: id,
+                    size: s.nodeSize,
+                    x: cX + n.x,
+                    y: cY + n.y,
+                    label: n.label
+                });
+            });
+            p.graph.edges().forEach(e => {
+                let id = s.edgeCnt++;
+                s.graph.addEdge({
+                    id: id,
+                    source: base + e.source,
+                    target: base + e.target,
+                    size: s.edgeSize
+                });
+            });
+
+            s.activeState.dropNodes();
+            p.graph.nodes().forEach((_, i) => s.activeState.addNodes(base + i));
+            s.refresh();
+
+            stepCounter.inc('Add pattern');
+            patternCounter.inc(p.patternId);
+        }
+
+        /**
+         * Expand nodes repeatedly until distances between nodes are long enough (so-called 'clear')
+         * Called after user drags a pattern into drawing board
+         * 
+         * @param   {Sigma} s
+         * @param   {array} nodes
+         */
+        function scaleTillClear(s, nodes) {
+            let num = nodes.length;
+            while (true) {
+                let clear = true;
+                for (let i = 0; i + 1 < num && clear; ++i)
+                    for (let j = i + 1; j < num && clear; ++j)
+                        if (Math.sqrt(Math.pow(nodes[i].x - nodes[j].x, 2) + Math.pow(nodes[i].y - nodes[j].y, 2)) < s.nodeSize * 5)
+                            clear = false;
+                if (clear)
+                    break;
+                else
+                    scaleNodes(s, nodes, 1.1, true);
+            }
+        }
+
+        // ***************************** add pattern *****************************
+        /**
+         * Allow users to drag a pattern into drawing board
+         * Use jQuery Draggable plugin
+         * 
+         * @param   {string}    sourceClass Pattern type ('sigma-default-pattern-container' or 'sigma-generated-pattern-container')
+         * @param   {Sigma}     s   Target drawing board
+         */
+        function enableDrag(sourceClass, s) {
+            $.each($('.' + sourceClass), (_, c) => {
+                $(c).draggable({
+                    // deep clone canvas
+                    // it costs much time! QAQ
+                    helper: e => {
+                        let clone = $(e.currentTarget).clone();
+                        clone.children('canvas.sigma-scene')[0].getContext('2d').drawImage($(e.currentTarget).children('canvas.sigma-scene')[0], 0, 0);
+                        return clone;
+                    },
+                    appendTo: 'div.container-fluid',
+                    scroll: false,
+                    cursor: 'move',
+                    opacity: 0.7,
+                    cursorAt: { // cursor at center
+                        left: c.offsetWidth / 2,
+                        top: c.offsetHeight / 2
+                    },
+                    start: e => {
+                        console.log('dragstart', e);
+                    },
+                    stop: e => {
+                        console.log('dragstop', e);
+                        let rx = e.pageX - $(s.renderers[0].container).offset().left;
+                        let ry = e.pageY - $(s.renderers[0].container).offset().top;
+                        if (rx - c.offsetWidth / 2 > 0 && rx + c.offsetWidth / 2 < s.renderers[0].container.offsetWidth
+                            && ry - c.offsetHeight / 2 > 0 && ry + c.offsetHeight / 2 < s.renderers[0].container.offsetHeight) {
+                            console.log('add pattern');
+                            let x = rx - s.sigmaMouse.offsetWidth / 2;
+                            let y = ry - s.sigmaMouse.offsetHeight / 2;
+                            let p = s.camera.cameraPosition(x, y);
+                            switch (e.target.id) {
+                                case 'customized-hub-default-pattern':
+                                    addPatternCenter = { x: p.x, y: p.y };
+                                    $('#customized-hub-modal').modal('show');
+                                    break;
+                                case 'customized-ring-default-pattern':
+                                    addPatternCenter = { x: p.x, y: p.y };
+                                    $('#customized-ring-modal').modal('show');
+                                    break;
+                                default:
+                                    addPattern(s, $(e.target).data('sigmaObject'), p.x, p.y);
+                                    scaleTillClear(s, s.activeState.nodes()); // avoid node clique
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        /**
+         * Generate HTML elements to display default patterns
+         */
+        function generateDefaultPatternsPanel() {
+            let defaultPatternsRow = $('#default-patterns-list');
+            defaultPatterns.forEach(p => {
+                let col = $('<div>', {
+                    class: 'col px-1',
+                    title: p.title
+                });
+                col.appendTo(defaultPatternsRow);
+                let div = $('<div>', {
+                    class: 'sigma-default-pattern-container'
+                });
+                if ('hub' == p.type)
+                    div.attr('id', 'customized-hub-default-pattern');
+                else if ('ring' == p.type)
+                    div.attr('id', 'customized-ring-default-pattern');
+                div.appendTo(col);
+                let s = new sigma({
+                    renderers: [
+                        {
+                            container: div.get(0),
+                            type: 'canvas'
+                        }
+                    ],
+                    settings: patternSigmaSettings
+                });
+                s.nodeCnt = 0;
+                s.edgeCnt = 0;
+                s.nodeSize = PATTERN_NODE_SIZE;
+                s.edgeSize = PATTERN_EDGE_SIZE;
+                s.patternId = `[Default] ${p.title}`;
+                div.data('sigmaObject', s);
+            });
+
+            $.each($('div.sigma-default-pattern-container'), (i, div) => drawDefaultPattern($(div).data('sigmaObject'), defaultPatterns[i]));
+
+            enableDrag('sigma-default-pattern-container', s);
+        }
+
+        /**
+         * Generate HTML elements to display generated patterns
+         * 
+         * @param   {string}    organizeWay Specify the organize way of generated patterns ('group-by-size', 'single page' or 'x-per-page')
+         */
+        function generateGeneratedPatternsPanel(organizeWay) {
+            // page loader
+            $('#pageloader').fadeIn();
+
+            let data = [];
+            switch (organizeWay) {
+                case 'group-by-size':
+                    displayPatterns.forEach(pattern => {
+                        let i = data.findIndex(a => a.size >= pattern.e.length);
+                        if (-1 != i && data[i].size == pattern.e.length) {
+                            data[i].patterns.push(pattern);
+                            data[i].name = 'S' + pattern.e.length + '(' + data[i].patterns.length + ')';
+                        } else {
+                            data.splice(-1 == i ? data.length : i, 0, {
+                                size: pattern.e.length,
+                                name: 'S' + pattern.e.length + '(1)',
+                                patterns: [pattern]
+                            });
+                        }
+                    });
+                    break;
+                case 'single-page':
+                    data.push({
+                        name: 'All(' + displayPatterns.length + ')',
+                        patterns: displayPatterns
+                    });
+                    break;
+                default: // x-per-page
+                    let x = parseInt(organizeWay);
+                    let pn = 1, pc = 0;
+                    displayPatterns.forEach(pattern => {
+                        if (pc == 0) {
+                            data.push({
+                                name: 'P' + pn + '(1)',
+                                patterns: [pattern]
+                            });
+                            ++pc;
+                        } else {
+                            data[pn - 1].patterns.push(pattern);
+                            data[pn - 1].name = 'P' + pn + '(' + (++pc) + ')';
+                            if (pc == x) {
+                                ++pn;
+                                pc = 0;
+                            }
+                        }
+                    });
+            }
+
+            generatedPatternSigmaObjects.forEach(s => s.kill());
+            generatedPatternsTab.siblings().show();
+            generatedPatternsTab.empty();
+            generatedPatternsContent.empty();
+            generatedPatternSigmaObjects = [];
+            generatedPatternSigmaObjectsByTab = {};
+
+            let containerDefaultWeight = 0, containerDefaultHeight = 0; // fix: weight and height of an hidden element is 0
+            data.forEach((elm, i) => {
+                let li = $('<li>', {
+                    class: 'nav-item'
+                });
+                let a = $('<a>', {
+                    class: 'nav-link' + (i == 0 ? ' show active' : ''),
+                    'data-toggle': 'pill',
+                    href: '#tab' + i,
+                    role: 'tab',
+                    text: elm.name
+                });
+                a.appendTo(li);
+                li.appendTo(generatedPatternsTab);
+
+                let tabPane = $('<div>', {
+                    class: 'tab-pane fade' + (i == 0 ? ' show active' : ''),
+                    id: 'tab' + i,
+                    role: 'tabpanel'
+                });
+                tabPane.appendTo(generatedPatternsContent); let row = $('<div>', {
+                    class: 'row'
+                });
+                row.appendTo(tabPane);
+
+                generatedPatternSigmaObjectsByTab['#tab' + i] = [];
+                elm.patterns.forEach(pattern => {
+                    let col = $('<div>', {
+                        class: 'col-3 px-1 py-1'
+                    });
+                    let div = $('<div>', {
+                        class: 'sigma-generated-pattern-container mb-1'
+                    });
+
+                    col.appendTo(row);
+                    div.appendTo(col);
+                    let s = new sigma({
+                        renderers: [
+                            {
+                                container: div.get(0),
+                                type: 'canvas'
+                            }
+                        ],
+                        settings: patternSigmaSettings
+                    });
+                    s.nodeCnt = 0;
+                    s.edgeCnt = 0;
+                    s.nodeSize = PATTERN_NODE_SIZE;
+                    s.edgeSize = PATTERN_EDGE_SIZE;
+                    s.patternId = `[Generated] ${pattern.id}`;
+                    if (i == 0 && s.renderers[0].container.offsetWidth && s.renderers[0].container.offsetHeight) {
+                        containerDefaultWeight = s.renderers[0].container.offsetWidth;
+                        containerDefaultHeight = s.renderers[0].container.offsetHeight;
+                    }
+                    s.containerDefaultWeight = containerDefaultWeight;
+                    s.containerDefaultHeight = containerDefaultHeight;
+                    drawGeneratedPattern(s, pattern);
+                    div.data('sigmaObject', s);
+                    generatedPatternSigmaObjects.push(s);
+                    generatedPatternSigmaObjectsByTab['#tab' + i].push(s);
+                });
+            });
+
+            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                generatedPatternSigmaObjectsByTab[$(e.currentTarget).attr('href')].forEach(p => {
+                    rotateTofitContainer(p);
+                    scaleTofitContainer(p);
+                    enableDrag('sigma-generated-pattern-container', s); // avoid zero offsetHeight or offsetWidth
+                });
+            });
+
+            enableDrag('sigma-generated-pattern-container', s);
+
+            // page loader
+            setTimeout(() => $('#pageloader').fadeOut(), LAYOUT_RUN_TIME * 2);
+        }
+
+        $(document).ready(function () {
+            // enable tootips everywhere
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // timer
+            let checkTimer = () => {
+                if (timerEnabled) {
+                    let sec = parseInt((new Date().getTime() - timer) / 1000);
+                    let min = parseInt(sec / 60);
+                    sec %= 60;
+                    $('#timer span').text(('00' + min).slice(-2) + ':' + ('00' + sec).slice(-2));
+                }
+            }
+            setInterval(checkTimer, 500);
+            $('#timer').click(() => {
+                if ($('#timer i').hasClass('fa-play')) {
+                    timerEnabled = true;
+                    timer = new Date().getTime();
+                    $('#timer i').removeClass('fa-play').addClass('fa-circle');
+                } else if ($('#timer i').hasClass('fa-circle')) {
+                    timerEnabled = false;
+                    $('#timer i').removeClass('fa-circle').addClass('fa-stop');
+                } else if ($('#timer i').hasClass('fa-stop')) {
+                    timerEnabled = false;
+                    $('#timer i').removeClass('fa-stop').addClass('fa-play');
+                    $('#timer span').text('00:00');
+                }
+            });
+
+            // resize labels panel
+            $('#labels-panel').css('max-width', ($('.container-fluid').width() - parseInt($('#board').css('min-width')) - $('#patterns-panel').width() - 25) + 'px');
+            $('#resize-gap').draggable({
+                helper: 'clone',
+                cursor: 'col-resize',
+                drag: e => {
+                    $('#labels-panel').css('width', e.originalEvent.originalEvent.clientX);
+                    s.refresh();
+                }
+            });
+
+            // search labels
+            $('#labels-search-box').keyup(() => {
+                let keyword = $('#labels-search-box').val();
+                if (keyword) {
+                    let n = 0;
+                    $.each($('#plain-labels .list-group-item'), (_, l) => {
+                        if ($(l).text().toUpperCase().includes(keyword.toUpperCase())) {
+                            ++n;
+                            $(l).show();
+                        } else
+                            $(l).hide();
+                    });
+                    $('#plain-labels').show();
+                    $('#nested-labels').hide();
+                    $('#labels-panel .card-footer').text(0 == n ? 'no result' : 1 == n ? '1 result' : n + ' results');
+                } else {
+                    $('#nested-labels').show();
+                    $('#plain-labels').hide();
+                    let n = $('#nested-labels .list-group-item-action').length;
+                    $('#labels-panel .card-footer').text(0 == n ? 'no label' : 1 == n ? '1 label' : n + ' labels');
+                }
+            });
+
+            // modify organize way of generated patterns
+            $('#generated-patterns-organize-way').change(() => {
+                console.log(`modify organize way of generated patterns to ${$('#generated-patterns-organize-way').val()}`);
+                generateGeneratedPatternsPanel($('#generated-patterns-organize-way').val());
+            });
+
+            s = new sigma({
+                renderer: {
+                    container: 'board',
+                    type: 'canvas'
+                },
+                settings: boardSigmaSettings
+            });
+
+            s.nodeCnt = 0;
+            s.edgeCnt = 0;
+            s.nodeSize = NODE_SIZE;
+            s.edgeSize = EDGE_SIZE;
+            s.minNodeDistance = MIN_NODE_DISTANCE;
+            s.sigmaMouse = document.querySelector('#board canvas.sigma-mouse');
+
+            // Instanciate the ActiveState plugin:
+            s.activeState = sigma.plugins.activeState(s);
+            // Initialize the dragNodes plugin:
+            s.dragListener = sigma.plugins.dragNodes(s, s.renderers[0], s.activeState);
+            // Initialize the Select plugin:
+            s.select = sigma.plugins.select(s, s.activeState);
+            // Initialize the lasso plugin:
+            s.lasso = sigma.plugins.lasso(s, s.renderers[0], {
+                'strokeStyle': 'rgb(236, 81, 72)',
+                'lineWidth': 2,
+                'fillWhileDrawing': true,
+                'fillStyle': 'rgba(236, 81, 72, 0.2)',
+                'cursor': 'crosshair'
+            });
+            s.select.bindLasso(s.lasso);
+
+            // ***************************** drag node & add edge & merge node *****************************
+            s.dragListener.bind('startdrag', function (e) {
+                console.log('dragNodes startdrag', e);
+                draggingNodes = {};
+                draggingNodes[e.data.node.id] = [e.data.node.x, e.data.node.y];
+                if (1 == s.activeState.nbNodes()) {
+                    beforeDragNodeId = s.activeState.nodes()[0].id;
+                } else {
+                    beforeDragNodeId = undefined;
+                    if (inActiveState(s, e.data.node.id) && s.activeState.nbNodes() > 1) { // fix bug of draging multiple nodes
+                        draggingNodes = {};
+                        dragDx = [];
+                        dragDy = [];
+                        s.activeState.nodes().forEach(n => {
+                            draggingNodes[n.id] = [n.x, n.y];
+                            dragDx.push(n.x - e.data.node.x);
+                            dragDy.push(n.y - e.data.node.y);
+                        });
+                    }
+                }
+            });
+            s.dragListener.bind('drag', function (e) {
+                // console.log('dragNodes drag', e);
+                beforeDragNodeId = undefined;
+                if (inActiveState(s, e.data.node.id) && s.activeState.nbNodes() > 1) { // fix bug of draging multiple nodes
+                    s.activeState.nodes().forEach((n, i) => {
+                        n.x = dragDx[i] + e.data.node.x;
+                        n.y = dragDy[i] + e.data.node.y;
+                    });
+                    s.refresh();
+                }
+            });
+            s.dragListener.bind('drop', function (e) {
+                // console.log('dragNodes drop', e);
+                beforeDragNodeId = undefined;
+            });
+            s.dragListener.bind('dragend', function (e) {
+                console.log('dragNodes dragend', e);
+                if (undefined != beforeDragNodeId) { // add edge
+                    if (addEdge(s, beforeDragNodeId, e.data.node.id)) {
+                        stepCounter.inc('Add edge');
+                        setTimeout(() => { // remove node select status
+                            s.activeState.dropNodes();
+                            s.refresh();
+                        }, 50);
+                    }
+                } else // drag node
+                    mergeNodes(s);
+            });
+
+            // ***************************** add node *****************************
+            s.sigmaMouse.addEventListener('mousedown', function (e) {
+                console.log('sigmaMouse mousedown', e);
+                // console.log(document.activeElement);
+                mouseMoved = false;
+            }, false);
+            s.sigmaMouse.addEventListener('mousemove', function (e) {
+                // console.log('sigmaMouse mousemove', e);
+                mouseMoved = true;
+            }, false);
+            s.sigmaMouse.addEventListener('mouseup', function (e) {
+                console.log('sigmaMouse mouseup', e);
+                if (mouseMoved) // drag rather than click
+                    return;
+                // fix bug: node/edge remains after right click if mouse stays
+                if (2 == e.button) { // right click
+                    $('#board .sigma-mouse').hide();
+                    setTimeout(() => { $('#board .sigma-mouse').show(); }, 50);
+                }
+                if (0 != e.button) // not left click
+                    return;
+                if (s.activeState.nbNodes()) { // click background
+                    s.activeState.dropNodes(); // clear select status
+                    s.refresh();
+                    return;
+                }
+                let x = sigma.utils.getX(e) - s.sigmaMouse.offsetWidth / 2;
+                let y = sigma.utils.getY(e) - s.sigmaMouse.offsetHeight / 2;
+                let p = s.camera.cameraPosition(x, y);
+                if (addNode(s, p.x, p.y, false))
+                    stepCounter.inc('Add node');
+                // NOT WORK!!!!!!!!!!!!!!! new node always active
+                s.activeState.dropNodes();
+                s.activeState.addNodes(s.graph.nodes().slice(-1).pop());
+                s.refresh();
+            }, false);
+
+            // ***************************** remove node *****************************
+            $('#board').parent().on('contextmenu', (e) => { // disable right click menu on board
+                console.log('board contextmenu', e);
+                e.preventDefault();
+            }, false);
+            s.renderers[0].bind('rightClickNode', function (e) {
+                console.log('rightClickNode', e);
+                console.log('remove node ' + e.data.node.id);
+                if (inActiveState(s, e.data.node.id)) {
+                    s.activeState.nodes().forEach(n => s.graph.dropNode(n.id));
+                } else
+                    s.graph.dropNode(e.data.node.id);
+                stepCounter.inc('Remove node(s)');
+                s.refresh();
+                // fix bug: node remains after right click if mouse stays
+                $('#board .sigma-mouse').hide();
+                setTimeout(() => { $('#board .sigma-mouse').show(); }, 50);
+            });
+
+            // ***************************** remove edge *****************************
+            s.renderers[0].bind('rightClickEdge', function (e) {
+                console.log('rightClickEdge', e);
+                console.log('remove edge ' + e.data.edge.id);
+                s.graph.dropEdge(e.data.edge.id);
+                stepCounter.inc('Remove edge');
+                s.refresh();
+                // fix bug: edge remains after right click if mouse stays
+                $('#board .sigma-mouse').hide();
+                setTimeout(() => { $('#board .sigma-mouse').show(); }, 50);
+            });
+
+            // ***************************** multi select *****************************
+            s.renderers[0].bind('render', function (e) {
+                console.log('render');
+                s.renderers[0].halo({
+                    nodes: s.activeState.nodes()
+                });
+            });
+            s.lasso.bind('selectedNodes', function (e) {
+                s.activeState.dropNodes();
+                s.activeState.addNodes(e.data.map(function (n) {
+                    return n.id;
+                }));
+                setTimeout(function () {
+                    // disable the lasso tool after a selection:
+                    s.lasso.deactivate();
+                    // refresh the display to see the active nodes:
+                    s.refresh({ skipIdexation: true });
+                }, 0);
+            });
+
+            generateDefaultPatternsPanel();
+
+            // ***************************** upload datastore *****************************
+            $('#upload-datastore-modal').on('show.bs.modal', () => {
+                $('#upload-datastore-modal form')[0].reset();
+                $('#upload-file').siblings('label').text('Choose file...');
+            });
+            $('#upload-file').change(() => {
+                $('#upload-file').siblings('label').text($('#upload-file').val() ? $('#upload-file').val().split('\\').pop() : 'Choose file...');
+            });
+            $('#upload-datastore-modal form').submit(() => {
+                console.log('upload-datastore-modal form submit');
+                let data = new FormData();
+                let name = $('#upload-datastore-name').val();
+                data.append('name', name);
+                data.append('file', $('#upload-file')[0].files[0]);
+                $.ajax({
+                    type: 'POST',
+                    url: '/datastores',
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    beforeSend: () => {
+                        $('#pageloader').fadeIn();
+                    },
+                    success: (res) => {
+                        if (res.success) {
+                            alert('Datastore \'' + name + '\' successfully uploaded!');
+                            $('#upload-datastore-modal').modal('hide');
+                        } else {
+                            alert('Error message:\n' + res.message);
+                        }
+                    },
+                    complete: () => {
+                        $('#pageloader').fadeOut();
+                    }
+                });
+                return false;
+            });
+
+            // ***************************** load datastore *****************************
+            $('#load-datastore-modal').on('show.bs.modal', () => {
+                $('#load-datastore-name').empty();
+                $('#datastore-pending-list').empty();
+                $('#pageloader').fadeIn();
+                $.get('/datastores', (data) => {
+                    data.forEach(d => {
+                        switch (d.status) {
+                            case 'Ready':
+                                $('#load-datastore-name').append($('<option>').attr('value', d.name).text(d.name));
+                                break;
+                            case 'Pending':
+                                $('#datastore-pending-list').append($('<li>').html(d.name + '&nbsp;&nbsp;').append($('<span>', { class: 'badge badge-warning' }).text(d.status)));
+                                break;
+                            default:
+                                if (d.status.startsWith('Failed')) // Failed
+                                    $('#datastore-pending-list').append($('<li>').html(d.name + '&nbsp;&nbsp;').append($('<span>', { class: 'badge badge-danger' }).text(d.status)));
+                                else // Preparing
+                                    $('#datastore-pending-list').append($('<li>').html(d.name + '&nbsp;&nbsp;').append($('<span>', { class: 'badge badge-success' }).text(d.status)));
+                        }
+                    });
+                    if (0 == $('#datastore-pending-list').children().length)
+                        $('#datastore-pending-list').append($('<li>').text('None'));
+                    $('#pageloader').fadeOut();
+                });
+            });
+            $('#load-datastore-modal form').submit(() => {
+                console.log('load-datastore-modal form submit');
+                datastoreName = $('#load-datastore-name').val();
+                $.get(`/datastores/${datastoreName}/labels`, labels => generateLabelsPanel(labels));
+                $.get(`/datastores/${datastoreName}/limits`, (limits) => {
+                    $('#customized-hub-degree').attr('max', limits.maxDegree);
+                    $('#customized-ring-length').attr('max', limits.maxCircle);
+                });
+                $.get(`/datastores/${datastoreName}/infos`, (infos) => {
+                    $('#current-datastore').removeClass('badge-secondary').addClass('badge-success').text(datastoreName);
+                    let time = 0;
+                    for (let i in infos)
+                        if (i.startsWith('Time of'))
+                            time += infos[i];
+                    $('#current-datastore-info').attr('data-original-title', `<b>Node number:</b> ${infos['NUM_V'].toLocaleString()}<br>
+                    <b>Edge number:</b> ${infos['NUM_E'].toLocaleString()}<br>
+                    <b>Time for pattern extraction:</b> ${parseInt(time).toLocaleString()}s`).show();
+                    alert(`Datastore '${datastoreName}' successfully loaded!`);
+                    $('#load-datastore-modal').modal('hide');
+                    // flash info icon
+                    let blinker = (t) => {
+                        if (t > 7) return;
+                        if (0 == t % 2)
+                            $('#current-datastore-info').fadeOut(500);
+                        else
+                            $('#current-datastore-info').fadeIn(500);
+                        setTimeout(blinker, 510, t + 1);
+                    };
+                    blinker(0);
+                });
+
+                return false;
+            });
+
+            // ***************************** generate patterns *****************************
+            $('#generate-patterns-button').click(() => {
+                //if ($('#current-datastore').hasClass('badge-secondary')) {
+                //    alert('No datastore loaded!');
+                //    $('#generate-patterns-modal').modal('hide');
+                //    return false;
+                //}
+            });
+            $('#generate-patterns-modal').on('show.bs.modal', () => {
+                $('#generate-patterns-modal form')[0].reset();
+                $('#generate-patterns-labels-type').empty();
+                for (let t in fixedLabels)
+                    $('<option>').attr('value', t).text(t).appendTo($('#generate-patterns-labels-type'));
+            });
+            $('#generate-patterns-modal form').submit(() => {
+                console.log('generate-patterns-modal form submit');
+                let labelType = $('#generate-patterns-labels-type').val();
+                let num = parseInt($('#generate-patterns-num').val());
+                let minSize = parseInt($('#generate-patterns-min-size').val());
+                let maxSize = parseInt($('#generate-patterns-max-size').val());
+                $('#pageloader').fadeIn();
+                $.ajax({
+                    type: 'GET',
+                    url: '/datastores/patterns_davinci',
+                    data: {
+                        labelType: labelType,
+                        num: num,
+                        minSize: minSize,
+                        maxSize: maxSize,
+                    },
+                    dataType: 'json',
+                    timeout: 0
+                }).done(res => {
+                    $('#pageloader').fadeOut();
+                    console.log("back here!")
+                    $('#generate-patterns-modal').modal('hide');
+                    $('#current-datastore').removeClass('badge-success').addClass('badge-secondary').text('None');
+                    $('#current-datastore-info').hide();
+
+                    generateLabelsPanel(fixedLabels[labelType]);
+                    displayPatterns = res.patterns_davinci;
+                    displayPatterns.forEach(p => {
+                        p.labels = p.labels.map(l => fixedLabels[labelType][l]);
+                    });
+                    let organizeWay = $('#generate-patterns-organize-way').val();
+                    $(`#generated-patterns-organize-way option[value='${organizeWay}']`).attr('selected', true);
+                    generateGeneratedPatternsPanel(organizeWay);
+                    reset(s);
+                                                
+                    //displayPatterns = [];
+                    //patterns.every(p => {
+                    //    let size = p.e.length;
+                    //    if (size >= minSize && size <= maxSize && p.type > 2 && p.type != 8 && p.type != 11) {
+                    //        displayPatterns.push(p);
+                    //        if (--num == 0)
+                    //            return false;
+                    //    }
+                    //    return true;
+                    //});
+                    //displayPatterns.sort((a, b) => a.e.length < b.e.length || a.e.length == b.e.length && a.n < b.n ? -1 : 1);
+                    //let organizeWay = $('#generate-patterns-organize-way').val();
+                    //$(`#generated-patterns-organize-way option[value='${organizeWay}']`).attr('selected', true);
+                    //generateGeneratedPatternsPanel(organizeWay);
+                    //reset(s);
+                    //$('#generate-patterns-modal').modal('hide');
+                });
+                return false;
+            });
+
+            // ***************************** load local patterns *****************************
+            $('#load-local-patterns-modal').on('show.bs.modal', () => {
+                $('#load-local-patterns-modal form')[0].reset();
+                $('#upload-patterns-file').siblings('label').text('Choose file...');
+                $('#fixed-labels-type').empty();
+                for (let t in fixedLabels)
+                    $('<option>').attr('value', t).text(t).appendTo($('#fixed-labels-type'));
+            });
+            $('#upload-patterns-file').change(() => {
+                $('#upload-patterns-file').siblings('label').text($('#upload-patterns-file').val() ? $('#upload-patterns-file').val().split('\\').pop() : 'Choose file...');
+            });
+            $('#load-local-patterns-modal form').submit(() => {
+                console.log('load-local-patterns-modal form submit');
+                let data = new FormData();
+                data.append('file', $('#upload-patterns-file')[0].files[0]);
+                let labelType = $('#fixed-labels-type').val();
+                let organizeWay = $('#load-local-patterns-organize-way').val();
+                $.ajax({
+                    type: 'POST',
+                    url: '/load',
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    beforeSend: () => {
+                        $('#pageloader').fadeIn();
+                    },
+                    success: (res) => {
+                        $('#pageloader').fadeOut();
+                        if (res.success) {
+                            $('#current-datastore').removeClass('badge-success').addClass('badge-secondary').text('None');
+                            $('#current-datastore-info').hide();
+
+                            generateLabelsPanel(fixedLabels[labelType]);
+                            displayPatterns = res.patterns;
+                            displayPatterns.forEach(p => {
+                                p.labels = p.labels.map(l => fixedLabels[labelType][l]);
+                            });
+                            $(`#generated-patterns-organize-way option[value='${organizeWay}']`).attr('selected', true);
+                            generateGeneratedPatternsPanel(organizeWay);
+                            reset(s);
+                            $('#load-local-patterns-modal').modal('hide');
+                        } else {
+                            alert('Error message:\n' + res.message);
+                        }
+                    }
+                });
+                return false;
+            });
+
+            // ***************************** add pattern *****************************
+            $('#customized-hub-modal form').submit(() => {
+                console.log('customized-hub-modal form submit');
+                let degree = parseInt($('#customized-hub-degree').val());
+                drawCustomizedHub(s, addPatternCenter.x, addPatternCenter.y, degree, false);
+                scaleTillClear(s, s.activeState.nodes()); // avoid node clique
+
+                stepCounter.inc('Add pattern');
+                patternCounter.inc('[Default] Customized ego');
+
+                $('#customized-hub-modal').modal('hide');
+                return false;
+            });
+
+            $('#customized-ring-modal form').submit(() => {
+                console.log('customized-ring-modal form submit');
+                let length = parseInt($('#customized-ring-length').val());
+                drawCustomizedRing(s, addPatternCenter.x, addPatternCenter.y, length, false);
+                scaleTillClear(s, s.activeState.nodes()); // avoid node clique
+
+                stepCounter.inc('Add pattern');
+                patternCounter.inc('[Default] Customized ring');
+
+                $('#customized-ring-modal').modal('hide');
+                return false;
+            });
+        });
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!-- Sigma JS -->
+    <script src="js/sigma.min.js"></script>
+    <script src="js/plugins/sigma.plugins.activeState.min.js"></script>
+    <script src="js/plugins/sigma.plugins.dragNodes.min.js"></script>
+    <script src="js/plugins/sigma.plugins.select.min.js"></script>
+    <script src="js/plugins/sigma.plugins.lasso.min.js"></script>
+    <script src="js/plugins/sigma.renderers.halo.min.js"></script>
+
+    <script src="js/dagre.js"></script>
+    <script src="js/plugins/sigma.layouts.dagre.min.js"></script>
+
+    <script src="js/plugins/sigma.layouts.forceAtlas2/supervisor.js"></script>
+    <script src="js/plugins/sigma.layouts.forceAtlas2/worker.js"></script>
+    <script src="js/plugins/sigma.layouts.forceAtlas2.min.js"></script>
+
+    <script src="js/plugins/sigma.plugins.animate.min.js"></script>
+    <script src="js/plugins/sigma.layouts.fruchtermanReingold.min.js"></script>
+
+    <script src="js/plugins/sigma.layouts.noverlap.min.js"></script>
+
+    <script src="js/plugins/sigma.layouts.forceLink/supervisor.js"></script>
+    <script src="js/plugins/sigma.layouts.forceLink/worker.js"></script>
+    <script src="js/plugins/sigma.layouts.forceLink.min.js"></script>
+</body>
+
+</html>
