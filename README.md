@@ -1,4 +1,4 @@
-AURORA is a novel data-driven visual subgraph query interface construction engine for graphs independent of domains and data sources. It takes any graph database in a specified format (refer to the sample dataset, AIDS) as input and generates patterns and GUI to faciliate visual query formulation.
+AURORA is a novel data-driven visual subgraph query interface construction engine for graph database independent of domains and data sources. It takes any graph database in a specified format (refer to the sample dataset, AIDS) as input and generates patterns and GUI to faciliate visual query formulation.
 
 
 
